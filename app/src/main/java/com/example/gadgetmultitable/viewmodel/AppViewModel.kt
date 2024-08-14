@@ -2,7 +2,11 @@ package com.example.gadgetmultitable.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
+import com.example.gadgetmultitable.Application
 import com.example.gadgetmultitable.data.Accessory
 import com.example.gadgetmultitable.data.AccessoryWithGadget
 import com.example.gadgetmultitable.data.AppDao
@@ -17,7 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppViewModel(
-    private  val appDao: AppDao,
+    private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private var gadgetId = MutableStateFlow(0)
@@ -76,6 +80,22 @@ class AppViewModel(
     fun deleteAccessory(accessory: Accessory){
         viewModelScope.launch {
             appDao.deleteAccessory(accessory)
+        }
+    }
+
+    companion object {
+        val Factory : ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+                extras: CreationExtras,
+            ) :T {
+                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                val savedStateHandle = extras.createSavedStateHandle()
+                return AppViewModel(
+                    (application as Application).database.appDao(),
+                    savedStateHandle,
+                ) as T
+            }
         }
     }
 }
