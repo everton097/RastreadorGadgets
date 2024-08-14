@@ -1,5 +1,6 @@
 package com.example.gadgetmultitable.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -21,7 +22,7 @@ import java.util.Date
 )
 data class Accessory(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @ColumnInfo(name = "accessory_id") val id: Int = 0,
     val name: String,
     val type: String,
     val gadgetId: Int, // Chave estrangeira para GadgetEntity

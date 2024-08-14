@@ -1,5 +1,6 @@
 package com.example.gadgetmultitable.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Junction
@@ -10,7 +11,7 @@ import java.util.Date
 @Entity(tableName = "gadget")
 data class Gadget(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @ColumnInfo(name = "gadget_id") val id: Int = 0,
     val name: String,
     val brand: String,
     val model: String,
