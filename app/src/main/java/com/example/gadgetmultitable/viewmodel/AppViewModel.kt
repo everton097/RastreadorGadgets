@@ -6,24 +6,35 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.navigation.NavController
 import com.example.gadgetmultitable.Application
+import com.example.gadgetmultitable.R
 import com.example.gadgetmultitable.data.Accessory
 import com.example.gadgetmultitable.data.AccessoryWithGadget
 import com.example.gadgetmultitable.data.AppDao
 import com.example.gadgetmultitable.data.Gadget
 import com.example.gadgetmultitable.data.GadgetWithAccessory
+import com.example.gadgetmultitable.ui.views.AppScreens
+import com.example.gadgetmultitable.ui.views.AppUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AppViewModel(
     private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    private val _appUiState: MutableStateFlow<AppUiState> =
+        MutableStateFlow(AppUiState())
+    val appUiState: StateFlow<AppUiState> =
+        _appUiState.asStateFlow()
+
     private var gadgetId = MutableStateFlow(0)
     private var accessoryId = MutableStateFlow(0)
 
@@ -81,6 +92,43 @@ class AppViewModel(
         viewModelScope.launch {
             appDao.deleteAccessory(accessory)
         }
+    }
+
+    fun selectGadgets(gadget: Gadget){
+        gadgetId.value = gadget.id
+    }
+
+    fun selectAccessory(accessory: Accessory){
+        accessoryId.value = accessory.id
+    }
+
+    fun navigate(navController: NavController) {
+        if (_appUiState.value.title == R.string.gadget_list) {
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.insert_new_gadget,
+                    fabIcon = R.drawable.baseline_check_24,
+                    iconContentDescription = R.string.insert_new_gadget,
+                )
+            }
+            navController.navigate(AppScreens.InsertGadget.name)
+        } else if (_appUiState.value.title == R.string.insert_new_gadget) {
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.gadget_list,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.gadget_list,
+                )
+            }
+            navController.navigate(AppScreens.GadgetList.name)
+        }
+    }
+
+    fun navigateBack(navController: NavController){
+        _appUiState.update {
+            AppUiState()
+        }
+        navController.popBackStack()
     }
 
     companion object {
