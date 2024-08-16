@@ -31,6 +31,7 @@ class AppViewModel(
     private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
     private val _appUiState: MutableStateFlow<AppUiState> =
         MutableStateFlow(AppUiState())
     val appUiState: StateFlow<AppUiState> =
@@ -108,6 +109,11 @@ class AppViewModel(
         gadgetId.flatMapLatest { id ->
             appDao.getGadgetWithAccessories(id)
         }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = GadgetWithAccessory(Gadget(0,""), listOf())
+            )
 
     fun insertGadget(gadget: Gadget){
         viewModelScope.launch {

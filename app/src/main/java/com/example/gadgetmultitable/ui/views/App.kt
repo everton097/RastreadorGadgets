@@ -50,6 +50,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.gadgetmultitable.data.Accessory
 import com.example.gadgetmultitable.data.Gadget
+import com.example.gadgetmultitable.data.GadgetWithAccessory
 import com.example.gadgetmultitable.viewmodel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -63,6 +64,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
     val gadgets by viewModel.gadgets.collectAsState()
     val accessories by viewModel.accessories.collectAsState()
     val appUiState by viewModel.appUiState.collectAsState()
+    val gadgetWithAccessories by viewModel.gadgetWithAccessory.collectAsState()
     val navController = rememberNavController()
 
     Scaffold(
@@ -107,12 +109,16 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                 //    viewModel = viewModel
                 //)
             }
+            composable(route = AppScreens.GadgetDetails.name) {
+                GadgetDetailsScreen(gadgetWithAccessories = gadgetWithAccessories)
+            }
         }
     }
 }
 
 enum class AppScreens {
     GadgetList,
+    GadgetDetails,
     InsertGadget,
 }
 
@@ -162,6 +168,24 @@ fun GadgetList(
                         }) {
                         Text(text = Accessory.name)
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GadgetDetailsScreen(
+    modifier: Modifier = Modifier,
+    gadgetWithAccessories: GadgetWithAccessory
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(text = gadgetWithAccessories.gadget.name)
+        Spacer(modifier = Modifier.height(5.dp))
+        LazyColumn {
+            items(gadgetWithAccessories.accessories){ accessory ->
+                Card {
+                    Text(text = accessory.name)
                 }
             }
         }
