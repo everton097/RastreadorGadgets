@@ -10,12 +10,12 @@ import androidx.navigation.NavController
 import com.example.gadgetmultitable.Application
 import com.example.gadgetmultitable.R
 import com.example.gadgetmultitable.data.Accessory
-import com.example.gadgetmultitable.data.AccessoryWithGadget
 import com.example.gadgetmultitable.data.AppDao
 import com.example.gadgetmultitable.data.Gadget
 import com.example.gadgetmultitable.data.GadgetWithAccessory
 import com.example.gadgetmultitable.ui.views.AppScreens
 import com.example.gadgetmultitable.ui.views.AppUiState
+import com.example.gadgetmultitable.ui.views.InsertGadgetUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class AppViewModel(
     private val appDao: AppDao,
@@ -34,6 +35,57 @@ class AppViewModel(
         MutableStateFlow(AppUiState())
     val appUiState: StateFlow<AppUiState> =
         _appUiState.asStateFlow()
+    // Inserção de Gadget
+    private var _insertGadgetUiState: MutableStateFlow<InsertGadgetUiState> = MutableStateFlow(
+        InsertGadgetUiState()
+    )
+    val insertGadgetScreenUiState: StateFlow<InsertGadgetUiState> =
+        _insertGadgetUiState.asStateFlow()
+    fun onGadgetNameChange(newGadgetName: String) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(name = newGadgetName)
+        }
+    }
+    fun onGadgetBrandChange(newGadgetBrand: String) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(brand = newGadgetBrand)
+        }
+    }
+    fun onGadgetModelChange(newGadgetModel: String) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(model = newGadgetModel)
+        }
+    }
+    fun onGadgetPurchaseDateChange(newGadgetPurchaseDate: Date) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(purchaseDate = newGadgetPurchaseDate)
+        }
+    }
+    private val _priceInput = MutableStateFlow("")
+    val priceInput: StateFlow<String> = _priceInput
+    fun onGadgetPriceChange(newPrice: String) {
+        _priceInput.value = newPrice
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(price = newPrice.toDoubleOrNull() ?: 0.0)
+        }
+    }
+    /*
+    fun onGadgetPriceChange(newGadgetPrice: Double) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(price = newGadgetPrice)
+        }
+    }*/
+    fun onGadgetSpecifications(newGadgetSpecifications: String) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(specifications = newGadgetSpecifications)
+        }
+    }
+    fun onGadgetStatus(newGadgetStatus: String) {
+        _insertGadgetUiState.update { currentState ->
+            currentState.copy(status = newGadgetStatus)
+        }
+    }
+
 
     private var gadgetId = MutableStateFlow(0)
     private var accessoryId = MutableStateFlow(0)
@@ -55,11 +107,6 @@ class AppViewModel(
     val gadgetWithAccessory: Flow<GadgetWithAccessory> =
         gadgetId.flatMapLatest { id ->
             appDao.getGadgetWithAccessories(id)
-        }
-
-    val accessoryWithGadget: Flow<AccessoryWithGadget> =
-        accessoryId.flatMapLatest { id ->
-            appDao.getAccessoryWithGadgets(id)
         }
 
     fun insertGadget(gadget: Gadget){
@@ -113,6 +160,17 @@ class AppViewModel(
             }
             navController.navigate(AppScreens.InsertGadget.name)
         } else if (_appUiState.value.title == R.string.insert_new_gadget) {
+            insertGadget(
+                Gadget(
+                    name = _insertGadgetUiState.value.name,
+                    brand = _insertGadgetUiState.value.brand,
+                    model = _insertGadgetUiState.value.model,
+                    purchaseDate = _insertGadgetUiState.value.purchaseDate,
+                    price = _insertGadgetUiState.value.price,
+                    specifications = _insertGadgetUiState.value.specifications,
+                    status = _insertGadgetUiState.value.status
+                )
+            )
             _appUiState.update { currentState ->
                 currentState.copy(
                     title = R.string.gadget_list,

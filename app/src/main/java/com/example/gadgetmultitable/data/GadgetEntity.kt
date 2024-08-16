@@ -10,8 +10,7 @@ import java.util.Date
 
 @Entity(tableName = "gadget")
 data class Gadget(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "gadget_id") val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val brand: String,
     val model: String,
@@ -24,12 +23,12 @@ data class Gadget(
 data class GadgetWithAccessory(
     @Embedded val gadget: Gadget,
     @Relation(
-        parentColumn = "id",
-        entityColumn = "id",
+        parentColumn = "id",  // Refere-se à coluna "gadget_id" em Gadget
+        entityColumn = "id",   // Refere-se à coluna "gadgetId" em Accessory
         associateBy = Junction(
-            Gadget::class,
-            parentColumn = "gadget_id",
-            entityColumn = "accessory_id"
+            Accessory::class,         // Junction deve ser com a entidade Accessory
+            parentColumn = "id", // Refere-se à coluna "gadget_id" em Gadget
+            entityColumn = "id"   // Refere-se à coluna "gadgetId" em Accessory
         )
     )
     val accessories: List<Accessory>

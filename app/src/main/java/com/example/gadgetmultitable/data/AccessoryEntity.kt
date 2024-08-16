@@ -21,25 +21,11 @@ import java.util.Date
     ]
 )
 data class Accessory(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "accessory_id") val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val type: String,
     val gadgetId: Int, // Chave estrangeira para GadgetEntity
     val purchaseDate: Date,
     val price: Double,
     val notes: String
-)
-
-data class AccessoryWithGadget(
-    @Embedded val accessory: Accessory,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "id",
-        associateBy = Junction(
-            Accessory::class,
-            parentColumn = "accessory_id",
-            entityColumn = "gadget_id")
-    )
-    val gadgets: List<Gadget>
 )

@@ -48,6 +48,6 @@ interface AppDao {
     fun getGadgetWithAccessories(gadgetId: Int): Flow<GadgetWithAccessory>
 
     // Recupera um acessório com seus gadgets (embora neste caso seja geralmente 1:1, pode haver casos específicos)
-    @Query("SELECT * FROM accessory WHERE id = :accessoryId")
-    fun getAccessoryWithGadgets(accessoryId: Int): Flow<AccessoryWithGadget>
+    //@Query("SELECT * FROM accessory WHERE accessory_id = :accessoryId")
+    //fun getAccessoryWithGadgets(accessoryId: Int): Flow<AccessoryWithGadget>
 }
