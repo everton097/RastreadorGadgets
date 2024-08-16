@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">GadgetMultiTable</string>
-
     <string name="gadget_list">Gadget List</string>
+    <string name="gadget_details">Gadget Details</string>
     <string name="insert_new_gadget">Insert new Gadget</string>
     <string name="confirm">Confirm</string>
     <string name="edit_gadget">Edit Gadget</string>

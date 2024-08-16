@@ -1,5 +1,6 @@
 package com.example.gadgetmultitable.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -21,7 +22,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,7 +34,7 @@ class AppViewModel(
     private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-
+    private var detailsGadgetScreen: Boolean = false
     private val _appUiState: MutableStateFlow<AppUiState> =
         MutableStateFlow(AppUiState())
     val appUiState: StateFlow<AppUiState> =
@@ -86,6 +89,21 @@ class AppViewModel(
             currentState.copy(status = newGadgetStatus)
         }
     }
+    fun createAccessory(){
+        viewModelScope.launch {
+            appDao.insertAccessory(
+                accessory = Accessory(
+                    id = 0,
+                    name = "",
+                    type = "",
+                    gadgetId = 1,
+                    purchaseDate = Date(),
+                    price = 200.0,
+                    notes = "Accessory teste manual"
+                )
+            )
+        }
+    }
 
 
     private var gadgetId = MutableStateFlow(0)
@@ -105,15 +123,64 @@ class AppViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = listOf()
             )
-    val gadgetWithAccessory: Flow<GadgetWithAccessory> =
+
+    val gadgetWithAccessory: StateFlow<GadgetWithAccessory?> =
         gadgetId.flatMapLatest { id ->
+            Log.d("logdebug", "Buscando acessórios para o gadget com ID: $id")
+            appDao.getGadgetWithAccessories(id)
+                .onEach { result ->
+                    if (result.accessories.isNullOrEmpty()) {
+                        Log.d("logdebug", "Nenhum acessório encontrado para o gadget com ID: $id")
+                    } else {
+                        Log.d("logdebug", "Acessórios encontrados: ${result.accessories}")
+                    }
+                }
+                .catch { exception ->
+                    Log.e("logdebug", "Erro ao buscar acessórios: ${exception.message}")
+                    emit(
+                        GadgetWithAccessory(
+                            gadget = Gadget(
+                                id = 0,
+                                name = "",
+                                brand = "",
+                                model = "",
+                                purchaseDate = Date(),
+                                price = 0.0,
+                                specifications = "",
+                                status = ""
+                            ),
+                            accessories = emptyList()
+                        )
+                    ) // Emitir null se ocorrer um erro
+                }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = null // Inicialmente null
+            )
+
+
+    /*
+    val gadgetWithAccessory: StateFlow<GadgetWithAccessory> =
+        gadgetId.flatMapLatest { id ->
+            Log.d("logdebug", "Entrou na chamada do banco passando: ${id}")
             appDao.getGadgetWithAccessories(id)
         }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = GadgetWithAccessory(Gadget(0,""), listOf())
-            )
+                initialValue = GadgetWithAccessory(Gadget(
+                    id = 0,
+                    name = "",
+                    brand = "",
+                    model = "",
+                    purchaseDate = Date(),
+                    price = 0.0,
+                    specifications = "",
+                    status = "",
+                ), listOf())
+            )*/
 
     fun insertGadget(gadget: Gadget){
         viewModelScope.launch {
@@ -148,6 +215,8 @@ class AppViewModel(
     }
 
     fun selectGadgets(gadget: Gadget){
+        detailsGadgetScreen= true
+        Log.d("logdebug", "Entrou em selectGadgets")
         gadgetId.value = gadget.id
     }
 
@@ -157,14 +226,26 @@ class AppViewModel(
 
     fun navigate(navController: NavController) {
         if (_appUiState.value.title == R.string.gadget_list) {
-            _appUiState.update { currentState ->
-                currentState.copy(
-                    title = R.string.insert_new_gadget,
-                    fabIcon = R.drawable.baseline_check_24,
-                    iconContentDescription = R.string.insert_new_gadget,
-                )
+            if (detailsGadgetScreen){
+                _appUiState.update { currentState ->
+                    currentState.copy(
+                        title = R.string.gadget_details,
+                        fabIcon = R.drawable.baseline_check_24,
+                        iconContentDescription = R.string.gadget_details,
+                    )
+                }
+                navController.navigate(AppScreens.GadgetDetails.name)
+                detailsGadgetScreen = false
+            }else{
+                _appUiState.update { currentState ->
+                    currentState.copy(
+                        title = R.string.insert_new_gadget,
+                        fabIcon = R.drawable.baseline_check_24,
+                        iconContentDescription = R.string.insert_new_gadget,
+                    )
+                }
+                navController.navigate(AppScreens.InsertGadget.name)
             }
-            navController.navigate(AppScreens.InsertGadget.name)
         } else if (_appUiState.value.title == R.string.insert_new_gadget) {
             insertGadget(
                 Gadget(

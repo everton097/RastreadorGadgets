@@ -1,6 +1,7 @@
 package com.example.gadgetmultitable.ui.views
 
 import android.app.DatePickerDialog
+import android.util.Log
 import android.widget.VideoView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -67,6 +68,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
     val gadgetWithAccessories by viewModel.gadgetWithAccessory.collectAsState()
     val navController = rememberNavController()
 
+    viewModel.createAccessory()
     Scaffold(
         topBar = {
             TopAppBar(title = {
@@ -110,7 +112,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                 //)
             }
             composable(route = AppScreens.GadgetDetails.name) {
-                GadgetDetailsScreen(gadgetWithAccessories = gadgetWithAccessories)
+                GadgetDetails(gadgetWithAccessories = gadgetWithAccessories)
             }
         }
     }
@@ -145,8 +147,9 @@ fun GadgetList(
                         .fillMaxWidth()
                         .padding(3.dp)
                         .clickable {
+                            Log.d("logdebug", "${gadget}")
                             onGadgetSelection(gadget)
-                            //navController.navigate("movie")
+                            navController.navigate(AppScreens.GadgetDetails.name)
                         }) {
                         Text(text = gadget.name)
                     }
@@ -175,15 +178,15 @@ fun GadgetList(
 }
 
 @Composable
-fun GadgetDetailsScreen(
+fun GadgetDetails(
     modifier: Modifier = Modifier,
-    gadgetWithAccessories: GadgetWithAccessory
+    gadgetWithAccessories: GadgetWithAccessory?
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(text = gadgetWithAccessories.gadget.name)
+        Text(text = gadgetWithAccessories!!.gadget.name)
         Spacer(modifier = Modifier.height(5.dp))
         LazyColumn {
-            items(gadgetWithAccessories.accessories){ accessory ->
+            items(gadgetWithAccessories!!.accessories){ accessory ->
                 Card {
                     Text(text = accessory.name)
                 }
