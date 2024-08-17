@@ -26,6 +26,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,8 +43,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -68,7 +73,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
     val gadgetWithAccessories by viewModel.gadgetWithAccessory.collectAsState()
     val navController = rememberNavController()
 
-    viewModel.createAccessory()
+    //viewModel.createAccessory()
     Scaffold(
         topBar = {
             TopAppBar(title = {
@@ -98,8 +103,9 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                     gadgets = gadgets,
                     accessory = accessories,
                     navController = navController,
+                    viewModel = viewModel,
                     onGadgetSelection = viewModel::selectGadgets,
-                    onAccessorySelection = viewModel::selectAccessory
+                    onAccessorySelection = viewModel::selectAccessory,
                 )
             }
             composable(route = AppScreens.InsertGadget.name) {
@@ -112,7 +118,19 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                 //)
             }
             composable(route = AppScreens.GadgetDetails.name) {
-                GadgetDetails(gadgetWithAccessories = gadgetWithAccessories)
+                GadgetDetails(
+                    navController = navController,
+                    viewModel = viewModel,
+                    gadgetWithAccessories = gadgetWithAccessories,
+                )
+            }
+            composable(route = AppScreens.InsertAccessory.name) {
+                InsertAccessory(
+                   gadgets = gadgets,
+                    navController = navController,
+                    onGadgetSelection = viewModel::selectGadgets,
+                    viewModel = viewModel
+                )
             }
         }
     }
@@ -122,6 +140,7 @@ enum class AppScreens {
     GadgetList,
     GadgetDetails,
     InsertGadget,
+    InsertAccessory,
 }
 
 @Composable
@@ -130,6 +149,7 @@ fun GadgetList(
     gadgets: List<Gadget>,
     accessory: List<Accessory>,
     navController: NavController,
+    viewModel: AppViewModel,
     onGadgetSelection: (Gadget) -> Unit,
     onAccessorySelection: (Accessory) -> Unit,
 ){
@@ -139,8 +159,8 @@ fun GadgetList(
             .padding(2.dp)) {
         Column(modifier = Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.5F)) {
-            Text(text = "Gadgets")
+            .fillMaxWidth()
+        ) {
             LazyColumn {
                 items(gadgets) { gadget ->
                     Card(modifier = Modifier
@@ -149,27 +169,18 @@ fun GadgetList(
                         .clickable {
                             Log.d("logdebug", "${gadget}")
                             onGadgetSelection(gadget)
-                            navController.navigate(AppScreens.GadgetDetails.name)
+                            viewModel.navigate(navController)
                         }) {
-                        Text(text = gadget.name)
-                    }
-                }
-            }
-        }
-        Column(modifier = Modifier
-            .fillMaxHeight()
-            .fillMaxWidth()) {
-            Text(text = "Accessories")
-            LazyColumn {
-                items(accessory) { Accessory ->
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(3.dp)
-                        .clickable {
-                            onAccessorySelection(Accessory)
-                            //navController.navigate("actor")
-                        }) {
-                        Text(text = Accessory.name)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceTint)
+                        ) {
+                            Column(modifier = modifier.padding(8.dp)) {
+                                Text(text = gadget.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, fontStyle = FontStyle.Normal)
+                            }
+                        }
                     }
                 }
             }
@@ -180,188 +191,53 @@ fun GadgetList(
 @Composable
 fun GadgetDetails(
     modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: AppViewModel,
     gadgetWithAccessories: GadgetWithAccessory?
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(text = gadgetWithAccessories!!.gadget.name)
-        Spacer(modifier = Modifier.height(5.dp))
-        LazyColumn {
-            items(gadgetWithAccessories!!.accessories){ accessory ->
-                Card {
-                    Text(text = accessory.name)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun InsertAccessory2(
-    modifier: Modifier = Modifier,
-    gadgets: List<Gadget>,
-    accessory: List<Accessory>,
-    navController: NavController,
-    onGadgetSelection: (Gadget) -> Unit,
-    onAccessorySelection: (Accessory) -> Unit,
-    viewModel: AppViewModel
-){
     BackHandler() {
         viewModel.navigateBack(navController)
     }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        TextField(value = "",
-            onValueChange = {  },
-            label = { Text(text = "Name") },
-            singleLine = true,
-            modifier = modifier.fillMaxWidth()
-        )
-        Spacer(modifier = modifier.height(8.dp))
-        TextField(value = "",
-            onValueChange = {},
-            label = { Text(text = "Notes") },
-            singleLine = false,
-            minLines = 1,
-            maxLines = 3,
-            modifier = modifier.fillMaxWidth()
-        )
-    }
-}
-
-@Composable
-fun InsertAccessory3(
-    modifier: Modifier = Modifier,
-    gadgets: List<Gadget>,
-    navController: NavController,
-    viewModel: AppViewModel,
-    onGadgetSelection: (Gadget) -> Unit
-) {
-    var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var selectedGadget by remember { mutableStateOf<Gadget?>(null) }
-    val purchaseDate by remember { mutableStateOf(Date()) }
-    var price by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var isDropdownExpanded by remember { mutableStateOf(false) }
-
-    BackHandler {
-        viewModel.navigateBack(navController)
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        TextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(text = "Name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth() // Usar Modifier diretamente em vez de 'modifier'
-        )
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(horizontal = 20.dp)) {
+        //Text(text = gadgetWithAccessories!!.gadget.name)
+        Text(text = "Name: ${gadgetWithAccessories!!.gadget.name}", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = type,
-            onValueChange = { type = it },
-            label = { Text(text = "Type") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Text(text = "Brand: ${gadgetWithAccessories!!.gadget.brand}", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Button to trigger DropdownMenu
-        Button(
-            onClick = { isDropdownExpanded = !isDropdownExpanded },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = selectedGadget?.name ?: "Select Gadget")
-        }
-
-        // Dropdown for Gadget Selection
-        DropdownMenu(
-            expanded = isDropdownExpanded,
-            onDismissRequest = { isDropdownExpanded = false }
-        ) {
-            gadgets.forEach { gadget ->
-                DropdownMenuItem(
-                    onClick = {
-                        selectedGadget = gadget
-                        onGadgetSelection(gadget)
-                        isDropdownExpanded = false
-                    },
-                    text = {
-                        Text(text = gadget.name)
+        Text(text = "Model: ${gadgetWithAccessories!!.gadget.model}", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Purchase Date: ${SimpleDateFormat("dd/MM/yyyy").format(gadgetWithAccessories!!.gadget.purchaseDate)}", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Price: ${gadgetWithAccessories!!.gadget.price}", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Specifications: ${gadgetWithAccessories!!.gadget.specifications}", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Status: ${gadgetWithAccessories!!.gadget.status}", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(10.dp))
+        LazyColumn {
+            items(gadgetWithAccessories!!.accessories){ accessory ->
+                Card(modifier = modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        //onEditTask()
+                    }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(modifier = modifier.padding(6.dp)) {
+                            Text(text = accessory.name, fontWeight = FontWeight.Normal, fontSize = 14.sp, fontStyle = FontStyle.Normal)
+                        }
                     }
-                )
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Date Picker for Purchase Date (Simplified for now)
-        TextField(
-            value = purchaseDate.toString(), // Placeholder
-            onValueChange = { /* No-op, Date picker would update this */ },
-            label = { Text(text = "Purchase Date") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false // Date would be selected via a dialog, not manually entered
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = price,
-            onValueChange = { price = it },
-            label = { Text(text = "Price") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = notes,
-            onValueChange = { notes = it },
-            label = { Text(text = "Notes") },
-            singleLine = false,
-            minLines = 1,
-            maxLines = 3,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                // Save Accessory to the database
-                selectedGadget?.let { gadget ->
-                    viewModel.insertAccessory(
-                        Accessory(
-                            name = name,
-                            type = type,
-                            gadgetId = gadget.id,
-                            purchaseDate = purchaseDate,
-                            price = price.toDoubleOrNull() ?: 0.0,
-                            notes = notes
-                        )
-                    )
-                }
-                navController.navigateUp()
-            },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(text = "Save")
-        }
     }
 }
-
 
 @Composable
 fun InsertAccessory(
@@ -371,17 +247,33 @@ fun InsertAccessory(
     viewModel: AppViewModel,
     onGadgetSelection: (Gadget) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var selectedGadget by remember { mutableStateOf<Gadget?>(null) }
-    val purchaseDate by remember { mutableStateOf(Date()) }
-    var price by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var isDropdownExpanded by remember { mutableStateOf(false) }
-
     BackHandler {
         viewModel.navigateBack(navController)
     }
+    val uiAccessoryState by viewModel.insertAccessoryScreenUiState.collectAsState()
+    // Para evitar terque apagar valor inicial
+    val priceAccessoryInput by viewModel.priceAccessoryInput.collectAsState()
+
+    // Variável que controla a exibição do DatePickerDialog
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    calendar.time = uiAccessoryState.purchaseDate
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            // Converte a data selecionada para um objeto Date
+            val selectedDate = Calendar.getInstance().apply {
+                set(selectedYear, selectedMonth, selectedDay)
+            }.time
+            // Chama a função para atualizar o estado
+            viewModel.onGadgetPurchaseDateChange(selectedDate)
+        },
+        year, month, day
+    )
+    val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiAccessoryState.purchaseDate)
 
     Column(
         modifier = modifier
@@ -389,8 +281,8 @@ fun InsertAccessory(
             .padding(8.dp)
     ) {
         TextField(
-            value = name,
-            onValueChange = { name = it },
+            value = uiAccessoryState.name,
+            onValueChange = viewModel::onAccessoryName,
             label = { Text(text = "Name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -398,60 +290,40 @@ fun InsertAccessory(
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = type,
-            onValueChange = { type = it },
+            value = uiAccessoryState.type,
+            onValueChange = viewModel::onAccessoryType,
             label = { Text(text = "Type") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Box to manage DropdownMenu visibility
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = { isDropdownExpanded = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = selectedGadget?.name ?: "Select Gadget")
-            }
-
-            DropdownMenu(
-                expanded = isDropdownExpanded,
-                onDismissRequest = { isDropdownExpanded = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                gadgets.forEach { gadget ->
-                    DropdownMenuItem(
-                        onClick = {
-                            selectedGadget = gadget
-                            onGadgetSelection(gadget)
-                            isDropdownExpanded = false
-                        },
-                        text = {
-                            Text(text = gadget.name)
-                        }
-                    )
-                }
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         // Date Picker for Purchase Date (Simplified for now)
-        TextField(
-            value = purchaseDate.toString(), // Placeholder
-            onValueChange = { /* No-op, Date picker would update this */ },
-            label = { Text(text = "Purchase Date") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false // Date would be selected via a dialog, not manually entered
-        )
+        // Box para tornar o TextField clicável
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    datePickerDialog.show() // Mostra o DatePickerDialog quando o Box é clicado
+                }
+        ) {
+            TextField(
+                value = formattedDate, // Exibe a data formatada
+                onValueChange = { /* No-op */ }, // Não faz nada porque o DatePicker controla o valor
+                label = { Text(text = "Purchase Date") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false, // Impede edição direta do campo
+                readOnly = true // Evita que o usuário digite manualmente
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = price,
-            onValueChange = { price = it },
+            value = priceAccessoryInput,
+            onValueChange = viewModel::onAccessoryPriceChange,
             label = { Text(text = "Price") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -461,38 +333,14 @@ fun InsertAccessory(
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = notes,
-            onValueChange = { notes = it },
+            value = uiAccessoryState.notes,
+            onValueChange = viewModel::onAccessoryNotes,
             label = { Text(text = "Notes") },
             singleLine = false,
             minLines = 1,
             maxLines = 3,
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                // Save Accessory to the database
-                selectedGadget?.let { gadget ->
-                    viewModel.insertAccessory(
-                        Accessory(
-                            name = name,
-                            type = type,
-                            gadgetId = gadget.id,
-                            purchaseDate = purchaseDate,
-                            price = price.toDoubleOrNull() ?: 0.0,
-                            notes = notes
-                        )
-                    )
-                }
-                navController.navigateUp()
-            },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(text = "Save")
-        }
     }
 }
 
@@ -509,16 +357,13 @@ fun InsertGadget(
     // Para evitar terque apagar valor inicial
     val priceInput by viewModel.priceInput.collectAsState()
 
-    val context = LocalContext.current
-
     // Variável que controla a exibição do DatePickerDialog
+    val context = LocalContext.current
     val calendar = Calendar.getInstance()
     calendar.time = uiState.purchaseDate
-
     val year = calendar.get(Calendar.YEAR)
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
-
     val datePickerDialog = DatePickerDialog(
         context,
         { _, selectedYear, selectedMonth, selectedDay ->
@@ -531,7 +376,6 @@ fun InsertGadget(
         },
         year, month, day
     )
-
     val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiState.purchaseDate)
 
     Column(

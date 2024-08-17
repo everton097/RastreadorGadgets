@@ -16,6 +16,7 @@ import com.example.gadgetmultitable.data.Gadget
 import com.example.gadgetmultitable.data.GadgetWithAccessory
 import com.example.gadgetmultitable.ui.views.AppScreens
 import com.example.gadgetmultitable.ui.views.AppUiState
+import com.example.gadgetmultitable.ui.views.InsertAccessoryUiState
 import com.example.gadgetmultitable.ui.views.InsertGadgetUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class AppViewModel(
     private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
     private var detailsGadgetScreen: Boolean = false
     private val _appUiState: MutableStateFlow<AppUiState> =
         MutableStateFlow(AppUiState())
@@ -105,6 +107,40 @@ class AppViewModel(
         }
     }
 
+    //Inserção de Accessory
+    private var _insertAccessoryUiState: MutableStateFlow<InsertAccessoryUiState> = MutableStateFlow(
+        InsertAccessoryUiState()
+    )
+    val insertAccessoryScreenUiState: StateFlow<InsertAccessoryUiState> =
+        _insertAccessoryUiState.asStateFlow()
+    fun onAccessoryName(newAccessoryName: String) {
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(notes = newAccessoryName)
+        }
+    }
+    fun onAccessoryType(newAccessoryType: String) {
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(type = newAccessoryType)
+        }
+    }
+    fun onAccessoryPurchaseDateChange(newAccessoryPurchaseDate: Date) {
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(purchaseDate = newAccessoryPurchaseDate)
+        }
+    }
+    private val _priceAccessoryInput = MutableStateFlow("")
+    val priceAccessoryInput: StateFlow<String> = _priceInput
+    fun onAccessoryPriceChange(newAccessoryPrice: String) {
+        _priceAccessoryInput.value = newAccessoryPrice
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(price = newAccessoryPrice.toDoubleOrNull() ?: 0.0)
+        }
+    }
+    fun onAccessoryNotes(newAccessoryNotes: String) {
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(notes = newAccessoryNotes)
+        }
+    }
 
     private var gadgetId = MutableStateFlow(0)
     private var accessoryId = MutableStateFlow(0)
@@ -160,28 +196,6 @@ class AppViewModel(
                 initialValue = null // Inicialmente null
             )
 
-
-    /*
-    val gadgetWithAccessory: StateFlow<GadgetWithAccessory> =
-        gadgetId.flatMapLatest { id ->
-            Log.d("logdebug", "Entrou na chamada do banco passando: ${id}")
-            appDao.getGadgetWithAccessories(id)
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = GadgetWithAccessory(Gadget(
-                    id = 0,
-                    name = "",
-                    brand = "",
-                    model = "",
-                    purchaseDate = Date(),
-                    price = 0.0,
-                    specifications = "",
-                    status = "",
-                ), listOf())
-            )*/
-
     fun insertGadget(gadget: Gadget){
         viewModelScope.launch {
             appDao.insertGadge(gadget)
@@ -218,6 +232,9 @@ class AppViewModel(
         detailsGadgetScreen= true
         Log.d("logdebug", "Entrou em selectGadgets")
         gadgetId.value = gadget.id
+        _insertAccessoryUiState.update { currentState ->
+            currentState.copy(gadgetId = gadget.id)
+        }
     }
 
     fun selectAccessory(accessory: Accessory){
@@ -230,13 +247,13 @@ class AppViewModel(
                 _appUiState.update { currentState ->
                     currentState.copy(
                         title = R.string.gadget_details,
-                        fabIcon = R.drawable.baseline_check_24,
+                        fabIcon = R.drawable.baseline_add_24,
                         iconContentDescription = R.string.gadget_details,
                     )
                 }
                 navController.navigate(AppScreens.GadgetDetails.name)
                 detailsGadgetScreen = false
-            }else{
+            } else{
                 _appUiState.update { currentState ->
                     currentState.copy(
                         title = R.string.insert_new_gadget,
@@ -263,6 +280,34 @@ class AppViewModel(
                     title = R.string.gadget_list,
                     fabIcon = R.drawable.baseline_add_24,
                     iconContentDescription = R.string.gadget_list,
+                )
+            }
+            navController.navigate(AppScreens.GadgetList.name)
+        } else if (_appUiState.value.title == R.string.gadget_details){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.insert_new_accessory,
+                    fabIcon = R.drawable.baseline_check_24,
+                    iconContentDescription = R.string.insert_new_accessory,
+                )
+            }
+            navController.navigate(AppScreens.InsertAccessory.name)
+        }else if (_appUiState.value.title == R.string.insert_new_accessory){
+            insertAccessory(
+                Accessory(
+                    name = _insertAccessoryUiState.value.name,
+                    type = _insertAccessoryUiState.value.type,
+                    gadgetId = _insertAccessoryUiState.value.gadgetId,
+                    purchaseDate = _insertAccessoryUiState.value.purchaseDate,
+                    price = _insertAccessoryUiState.value.price,
+                    notes = _insertAccessoryUiState.value.notes
+                )
+            )
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.insert_new_gadget,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.insert_new_gadget,
                 )
             }
             navController.navigate(AppScreens.GadgetList.name)
