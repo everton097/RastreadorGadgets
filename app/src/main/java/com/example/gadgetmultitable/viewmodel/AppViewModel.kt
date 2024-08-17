@@ -224,6 +224,15 @@ class AppViewModel(
 
     fun selectAccessory(navController: NavController,accessory: Accessory){
         accessoryId.value = accessory.id
+        _appUiState.update { currentState ->
+            currentState.copy(
+                title = R.string.accessory_details,
+                fabIcon = R.drawable.baseline_add_24,
+                iconContentDescription = R.string.accessory_details,
+                optionsEnable = true,
+                floatingActionButtonEnable = false,
+            )
+        }
         navController.navigate(AppScreens.AccessoryDetails.name)
     }
 
@@ -269,15 +278,6 @@ class AppViewModel(
     fun accessoryDetailsOption() : Accessory? {
         val accessoryIdIdValue = accessoryId.value
         val accessoriesToDetails = accessories.value.find { it.id == accessoryIdIdValue }
-        _appUiState.update { currentState ->
-            currentState.copy(
-                title = R.string.accessory_details,
-                fabIcon = R.drawable.baseline_add_24,
-                iconContentDescription = R.string.accessory_details,
-                optionsEnable = true,
-                floatingActionButtonEnable = false,
-            )
-        }
         return accessoriesToDetails
     }
 
@@ -393,12 +393,15 @@ class AppViewModel(
 
     fun navigateBack(navController: NavController){
         if (_appUiState.value.title == R.string.insert_new_accessory ||
-            _appUiState.value.title == R.string.edit_gadget){
+            _appUiState.value.title == R.string.edit_gadget ||
+            _appUiState.value.title == R.string.accessory_details){
             _appUiState.update { currentState ->
                 currentState.copy(
                     title = R.string.gadget_details,
                     fabIcon = R.drawable.baseline_add_24,
                     iconContentDescription = R.string.gadget_details,
+                    optionsEnable = true,
+                    floatingActionButtonEnable = true
                 )
             }
             navController.popBackStack()
@@ -409,16 +412,7 @@ class AppViewModel(
                     fabIcon = R.drawable.baseline_add_24,
                     iconContentDescription = R.string.gadget_list,
                     optionsEnable = false,
-                )
-            }
-            navController.navigate(AppScreens.GadgetList.name)
-        }else if (_appUiState.value.title == R.string.accessory_details){
-            _appUiState.update { currentState ->
-                currentState.copy(
-                    title = R.string.gadget_list,
-                    fabIcon = R.drawable.baseline_add_24,
-                    iconContentDescription = R.string.gadget_list,
-                    optionsEnable = true,
+                    floatingActionButtonEnable = true
                 )
             }
             navController.navigate(AppScreens.GadgetList.name)
