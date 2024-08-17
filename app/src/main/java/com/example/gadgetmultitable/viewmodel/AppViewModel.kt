@@ -224,6 +224,20 @@ class AppViewModel(
         accessoryId.value = accessory.id
     }
 
+    fun DeleteOption(navController: NavController) {
+        if (_appUiState.value.title == R.string.gadget_details) {
+            val gadgetIdValue = gadgetId.value
+            val gadgetToDelete = gadgets.value.find { it.id == gadgetIdValue }
+
+            if (gadgetToDelete != null) {
+                deleteGadget(gadgetToDelete)
+            } else {
+                Log.e("logdebug", "DeleteOption: Gadget com ID $gadgetIdValue não encontrado.")
+            }
+            navigateBack(navController)
+        }
+    }
+
     fun navigate(navController: NavController) {
         if (_appUiState.value.title == R.string.gadget_list) {
             if (detailsGadgetScreen){

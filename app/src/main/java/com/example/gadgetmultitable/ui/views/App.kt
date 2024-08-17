@@ -84,7 +84,6 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                     if (appUiState.optionsEnable){
                         Box(
                             modifier = Modifier.wrapContentSize(Alignment.TopEnd)
-
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.baseline_more_vert_24),
@@ -115,9 +114,6 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                                                     contentDescription = "Edit",
                                                     modifier = Modifier
                                                         .padding(end = 8.dp)
-                                                        .clickable {
-                                                            expanded = true
-                                                        }
                                                 )
                                                 Text(text = "Editar")
                                             }
@@ -126,6 +122,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                                     DropdownMenuItem(
                                         onClick = {
                                             expanded = false
+                                            viewModel.DeleteOption(navController)
                                         },
                                         text = {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -176,12 +173,6 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
             }
             composable(route = AppScreens.InsertGadget.name) {
                 InsertGadget(navController = navController, viewModel = viewModel)
-                // InsertAccessory(
-                //   gadgets = gadgets,
-                //    navController = navController,
-                //    onGadgetSelection = viewModel::selectGadgets,
-                //    viewModel = viewModel
-                //)
             }
             composable(route = AppScreens.GadgetDetails.name) {
                 GadgetDetails(
