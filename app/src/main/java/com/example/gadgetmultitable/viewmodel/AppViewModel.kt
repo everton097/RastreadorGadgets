@@ -150,7 +150,6 @@ class AppViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val gadgetWithAccessory: StateFlow<GadgetWithAccessory?> =
         gadgetId.flatMapLatest { id ->
-            Log.d("logdebug", "Buscando acessórios para o gadget com ID: $id")
             appDao.getGadgetWithAccessories(id)
                 .onEach { result ->
                     if (result.accessories.isNullOrEmpty()) {
@@ -185,10 +184,8 @@ class AppViewModel(
         }
     }
     fun updateGadget(gadget: Gadget) {
-        Log.d("logdebug", "Entrou no metodo DB de update passando: ${gadget}")
         viewModelScope.launch {
-            val rowsUpdated = appDao.updateGadge(gadget)
-            Log.d("logdebug", "Rows updated: $rowsUpdated")
+            appDao.updateGadge(gadget)
         }
     }
     fun deleteGadget(gadget: Gadget){
@@ -216,7 +213,6 @@ class AppViewModel(
 
     fun selectGadgets(gadget: Gadget){
         detailsGadgetScreen= true
-        Log.d("logdebug", "Entrou em selectGadgets")
         gadgetId.value = gadget.id
         _insertAccessoryUiState.update { currentState ->
             currentState.copy(gadgetId = gadget.id)
@@ -388,7 +384,6 @@ class AppViewModel(
             }
             navController.navigate(AppScreens.GadgetDetails.name)
         }else if (_appUiState.value.title == R.string.edit_gadget){
-            Log.d("logdebug", "Entrou no metodo navegadote update")
             updateGadget(
                 Gadget(
                     id = gadgetId.value,
@@ -401,7 +396,6 @@ class AppViewModel(
                     status = _insertGadgetUiState.value.status
                 )
             )
-            Log.d("logdebug", "Saiu do metodo navegate update")
             _appUiState.update { currentState ->
                 currentState.copy(
                     title = R.string.gadget_details,
@@ -424,6 +418,28 @@ class AppViewModel(
                 navController.navigate(AppScreens.AccessoryEdition.name)
                 detailsGadgetScreen = false
             }
+        }else if (_appUiState.value.title == R.string.edit_accessory){
+            updateAccessory(
+                Accessory(
+                    id = accessoryId.value,
+                    name = _insertAccessoryUiState.value.name,
+                    type = _insertAccessoryUiState.value.type,
+                    gadgetId = _insertAccessoryUiState.value.gadgetId,
+                    purchaseDate = _insertAccessoryUiState.value.purchaseDate,
+                    price = _insertAccessoryUiState.value.price,
+                    notes = _insertAccessoryUiState.value.notes,
+                )
+            )
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.accessory_details,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.accessory_details,
+                    optionsEnable = true,
+                    floatingActionButtonEnable = false
+                )
+            }
+            navController.popBackStack()
         }
     }
 
@@ -452,6 +468,17 @@ class AppViewModel(
                 )
             }
             navController.navigate(AppScreens.GadgetList.name)
+        }else if (_appUiState.value.title == R.string.edit_accessory){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.accessory_details,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.accessory_details,
+                    optionsEnable = true,
+                    floatingActionButtonEnable = false
+                )
+            }
+            navController.popBackStack()
         }else{
         _appUiState.update {
             AppUiState()
