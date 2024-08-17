@@ -115,7 +115,7 @@ class AppViewModel(
         _insertAccessoryUiState.asStateFlow()
     fun onAccessoryName(newAccessoryName: String) {
         _insertAccessoryUiState.update { currentState ->
-            currentState.copy(notes = newAccessoryName)
+            currentState.copy(name = newAccessoryName)
         }
     }
     fun onAccessoryType(newAccessoryType: String) {
@@ -232,9 +232,9 @@ class AppViewModel(
         detailsGadgetScreen= true
         Log.d("logdebug", "Entrou em selectGadgets")
         gadgetId.value = gadget.id
-        _insertAccessoryUiState.update { currentState ->
+        /*_insertAccessoryUiState.update { currentState ->
             currentState.copy(gadgetId = gadget.id)
-        }
+        }*/
     }
 
     fun selectAccessory(accessory: Accessory){

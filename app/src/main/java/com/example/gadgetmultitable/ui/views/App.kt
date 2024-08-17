@@ -269,7 +269,7 @@ fun InsertAccessory(
                 set(selectedYear, selectedMonth, selectedDay)
             }.time
             // Chama a função para atualizar o estado
-            viewModel.onGadgetPurchaseDateChange(selectedDate)
+            viewModel.onAccessoryPurchaseDateChange(selectedDate)
         },
         year, month, day
     )
