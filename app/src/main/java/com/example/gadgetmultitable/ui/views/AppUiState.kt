@@ -9,4 +9,5 @@ data class AppUiState(
     @DrawableRes val fabIcon : Int = R.drawable.baseline_add_24,
     @StringRes val iconContentDescription: Int = R.string.insert_new_gadget,
     val optionsEnable: Boolean = false,
+    val floatingActionButtonEnable: Boolean = true,
 )

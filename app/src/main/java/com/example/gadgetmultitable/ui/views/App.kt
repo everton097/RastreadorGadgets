@@ -106,6 +106,7 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                                     DropdownMenuItem(
                                         onClick = {
                                             expanded = false
+                                            viewModel.EditOption(navController)
                                         },
                                         text = {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -144,15 +145,17 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
             })
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                viewModel.navigate(navController = navController)
-            }) {
-                Image(
-                    painter = painterResource(id = appUiState.fabIcon),
-                    contentDescription = stringResource(
-                        id = appUiState.iconContentDescription
+            if(appUiState.floatingActionButtonEnable){
+                FloatingActionButton(onClick = {
+                    viewModel.navigate(navController = navController)
+                }) {
+                    Image(
+                        painter = painterResource(id = appUiState.fabIcon),
+                        contentDescription = stringResource(
+                            id = appUiState.iconContentDescription
+                        )
                     )
-                )
+                }
             }
         }
     ) {
@@ -164,11 +167,9 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
             composable(route = AppScreens.GadgetList.name) {
                 GadgetList(
                     gadgets = gadgets,
-                    accessory = accessories,
                     navController = navController,
                     viewModel = viewModel,
                     onGadgetSelection = viewModel::selectGadgets,
-                    onAccessorySelection = viewModel::selectAccessory,
                 )
             }
             composable(route = AppScreens.InsertGadget.name) {
@@ -181,12 +182,23 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                     gadgetWithAccessories = gadgetWithAccessories,
                 )
             }
+            composable(route = AppScreens.GadgetEdition.name) {
+                GadgetEdition(navController = navController, viewModel = viewModel)
+            }
             composable(route = AppScreens.InsertAccessory.name) {
                 InsertAccessory(
                    gadgets = gadgets,
                     navController = navController,
                     onGadgetSelection = viewModel::selectGadgets,
                     viewModel = viewModel
+                )
+            }
+            composable(route = AppScreens.AccessoryDetails.name ) {
+                val accessory = viewModel.accessoryDetailsOption()
+                AccessoryDetails(
+                    navController = navController,
+                    viewModel = viewModel,
+                    accessory = accessory,
                 )
             }
         }
@@ -196,19 +208,19 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
 enum class AppScreens {
     GadgetList,
     GadgetDetails,
+    GadgetEdition,
     InsertGadget,
     InsertAccessory,
+    AccessoryDetails,
 }
 
 @Composable
 fun GadgetList(
     modifier: Modifier = Modifier,
     gadgets: List<Gadget>,
-    accessory: List<Accessory>,
     navController: NavController,
     viewModel: AppViewModel,
     onGadgetSelection: (Gadget) -> Unit,
-    onAccessorySelection: (Accessory) -> Unit,
 ){
     Row(
         modifier
@@ -284,7 +296,7 @@ fun GadgetDetails(
                     .fillMaxWidth()
                     .padding(vertical = 2.dp)
                     .clickable {
-                        //onEditTask()
+                        viewModel.selectAccessory(navController,accessory)
                     }) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -299,111 +311,6 @@ fun GadgetDetails(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun InsertAccessory(
-    modifier: Modifier = Modifier,
-    gadgets: List<Gadget>,
-    navController: NavController,
-    viewModel: AppViewModel,
-    onGadgetSelection: (Gadget) -> Unit
-) {
-    BackHandler {
-        viewModel.navigateBack(navController)
-    }
-    val uiAccessoryState by viewModel.insertAccessoryScreenUiState.collectAsState()
-    // Para evitar terque apagar valor inicial
-    val priceAccessoryInput by viewModel.priceAccessoryInput.collectAsState()
-
-    // Variável que controla a exibição do DatePickerDialog
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
-    calendar.time = uiAccessoryState.purchaseDate
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _, selectedYear, selectedMonth, selectedDay ->
-            // Converte a data selecionada para um objeto Date
-            val selectedDate = Calendar.getInstance().apply {
-                set(selectedYear, selectedMonth, selectedDay)
-            }.time
-            // Chama a função para atualizar o estado
-            viewModel.onAccessoryPurchaseDateChange(selectedDate)
-        },
-        year, month, day
-    )
-    val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiAccessoryState.purchaseDate)
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        TextField(
-            value = uiAccessoryState.name,
-            onValueChange = viewModel::onAccessoryName,
-            label = { Text(text = "Name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = uiAccessoryState.type,
-            onValueChange = viewModel::onAccessoryType,
-            label = { Text(text = "Type") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Date Picker for Purchase Date (Simplified for now)
-        // Box para tornar o TextField clicável
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    datePickerDialog.show() // Mostra o DatePickerDialog quando o Box é clicado
-                }
-        ) {
-            TextField(
-                value = formattedDate, // Exibe a data formatada
-                onValueChange = { /* No-op */ }, // Não faz nada porque o DatePicker controla o valor
-                label = { Text(text = "Purchase Date") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false, // Impede edição direta do campo
-                readOnly = true // Evita que o usuário digite manualmente
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = priceAccessoryInput,
-            onValueChange = viewModel::onAccessoryPriceChange,
-            label = { Text(text = "Price") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = uiAccessoryState.notes,
-            onValueChange = viewModel::onAccessoryNotes,
-            label = { Text(text = "Notes") },
-            singleLine = false,
-            minLines = 1,
-            maxLines = 3,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -526,4 +433,258 @@ fun InsertGadget(
     }
 }
 
+@Composable
+fun GadgetEdition(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: AppViewModel
+) {
+    BackHandler {
+        viewModel.navigateBack(navController)
+    }
+    val uiState by viewModel.insertGadgetScreenUiState.collectAsState()
+    // Para evitar terque apagar valor inicial
+    val priceInput by viewModel.priceInput.collectAsState()
 
+    // Variável que controla a exibição do DatePickerDialog
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    calendar.time = uiState.purchaseDate
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            // Converte a data selecionada para um objeto Date
+            val selectedDate = Calendar.getInstance().apply {
+                set(selectedYear, selectedMonth, selectedDay)
+            }.time
+            // Chama a função para atualizar o estado
+            viewModel.onGadgetPurchaseDateChange(selectedDate)
+        },
+        year, month, day
+    )
+    val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiState.purchaseDate)
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+        TextField(
+            value = uiState.name,
+            onValueChange = viewModel::onGadgetNameChange,
+            label = { Text(text = "Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiState.brand,
+            onValueChange = viewModel::onGadgetBrandChange,
+            label = { Text(text = "Brand") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiState.model,
+            onValueChange = viewModel::onGadgetModelChange,
+            label = { Text(text = "Model") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Box para tornar o TextField clicável
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    datePickerDialog.show() // Mostra o DatePickerDialog quando o Box é clicado
+                }
+        ) {
+            TextField(
+                value = formattedDate, // Exibe a data formatada
+                onValueChange = { /* No-op */ }, // Não faz nada porque o DatePicker controla o valor
+                label = { Text(text = "Purchase Date") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false, // Impede edição direta do campo
+                readOnly = true // Evita que o usuário digite manualmente
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = priceInput,
+            onValueChange = viewModel::onGadgetPriceChange,
+            label = { Text(text = "Price") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiState.specifications,
+            onValueChange = viewModel::onGadgetSpecifications,
+            label = { Text(text = "Specifications") },
+            singleLine = false,
+            minLines = 1,
+            maxLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiState.status,
+            onValueChange = viewModel::onGadgetStatus,
+            label = { Text(text = "Status") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun InsertAccessory(
+    modifier: Modifier = Modifier,
+    gadgets: List<Gadget>,
+    navController: NavController,
+    viewModel: AppViewModel,
+    onGadgetSelection: (Gadget) -> Unit
+) {
+    BackHandler {
+        viewModel.navigateBack(navController)
+    }
+    val uiAccessoryState by viewModel.insertAccessoryScreenUiState.collectAsState()
+    // Para evitar terque apagar valor inicial
+    val priceAccessoryInput by viewModel.priceAccessoryInput.collectAsState()
+
+    // Variável que controla a exibição do DatePickerDialog
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    calendar.time = uiAccessoryState.purchaseDate
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            // Converte a data selecionada para um objeto Date
+            val selectedDate = Calendar.getInstance().apply {
+                set(selectedYear, selectedMonth, selectedDay)
+            }.time
+            // Chama a função para atualizar o estado
+            viewModel.onAccessoryPurchaseDateChange(selectedDate)
+        },
+        year, month, day
+    )
+    val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiAccessoryState.purchaseDate)
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+        TextField(
+            value = uiAccessoryState.name,
+            onValueChange = viewModel::onAccessoryName,
+            label = { Text(text = "Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiAccessoryState.type,
+            onValueChange = viewModel::onAccessoryType,
+            label = { Text(text = "Type") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Date Picker for Purchase Date (Simplified for now)
+        // Box para tornar o TextField clicável
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    datePickerDialog.show() // Mostra o DatePickerDialog quando o Box é clicado
+                }
+        ) {
+            TextField(
+                value = formattedDate, // Exibe a data formatada
+                onValueChange = { /* No-op */ }, // Não faz nada porque o DatePicker controla o valor
+                label = { Text(text = "Purchase Date") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false, // Impede edição direta do campo
+                readOnly = true // Evita que o usuário digite manualmente
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = priceAccessoryInput,
+            onValueChange = viewModel::onAccessoryPriceChange,
+            label = { Text(text = "Price") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiAccessoryState.notes,
+            onValueChange = viewModel::onAccessoryNotes,
+            label = { Text(text = "Notes") },
+            singleLine = false,
+            minLines = 1,
+            maxLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+fun AccessoryDetails(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: AppViewModel,
+    accessory: Accessory?,
+) {
+    BackHandler() {
+        viewModel.navigateBack(navController)
+    }
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(horizontal = 20.dp)) {
+        if (accessory == null) {
+            // Exibe uma mensagem de erro ou navega para outra tela
+            Text("Accessory not found")
+        } else {
+            //Text(text = gadgetWithAccessories!!.gadget.name)
+            Text(text = "Name: ${accessory.name}", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Type: ${accessory.type}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Purchase Date: ${SimpleDateFormat("dd/MM/yyyy").format(accessory.purchaseDate)}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Price: ${accessory.price}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Notes: ${accessory.notes}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+    }
+}

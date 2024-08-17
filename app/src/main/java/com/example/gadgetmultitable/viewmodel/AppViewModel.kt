@@ -42,7 +42,7 @@ class AppViewModel(
         MutableStateFlow(AppUiState())
     val appUiState: StateFlow<AppUiState> =
         _appUiState.asStateFlow()
-    // Inserção de Gadget
+    // Inserção de Gadget *
     private var _insertGadgetUiState: MutableStateFlow<InsertGadgetUiState> = MutableStateFlow(
         InsertGadgetUiState()
     )
@@ -183,9 +183,11 @@ class AppViewModel(
             appDao.insertGadge(gadget)
         }
     }
-    fun updateGadget(gadget: Gadget){
+    fun updateGadget(gadget: Gadget) {
+        Log.d("logdebug", "Entrou no metodo DB de update passando: ${gadget}")
         viewModelScope.launch {
-            appDao.updateGadge(gadget)
+            val rowsUpdated = appDao.updateGadge(gadget)
+            Log.d("logdebug", "Rows updated: $rowsUpdated")
         }
     }
     fun deleteGadget(gadget: Gadget){
@@ -220,8 +222,9 @@ class AppViewModel(
         }
     }
 
-    fun selectAccessory(accessory: Accessory){
+    fun selectAccessory(navController: NavController,accessory: Accessory){
         accessoryId.value = accessory.id
+        navController.navigate(AppScreens.AccessoryDetails.name)
     }
 
     fun DeleteOption(navController: NavController) {
@@ -236,6 +239,46 @@ class AppViewModel(
             }
             navigateBack(navController)
         }
+    }
+    fun EditOption(navController: NavController) {
+        if (_appUiState.value.title == R.string.gadget_details) {
+            val gadgetIdValue = gadgetId.value
+            val gadgetToEdit = gadgets.value.find { it.id == gadgetIdValue }
+            detailsGadgetScreen = true
+            var newPriceEdit = gadgetToEdit?.price
+            _priceInput.value = newPriceEdit.toString()
+            if (gadgetToEdit != null) {
+                _insertGadgetUiState.update { currentState ->
+                    currentState.copy(
+                        name = gadgetToEdit.name,
+                        brand = gadgetToEdit.brand,
+                        model = gadgetToEdit.model,
+                        purchaseDate = gadgetToEdit.purchaseDate,
+                        price = gadgetToEdit.price,
+                        specifications = gadgetToEdit.specifications,
+                        status = gadgetToEdit.status,
+                    )
+                }
+            } else {
+                Log.e("logdebug", "EditOption: Gadget com ID $gadgetIdValue não encontrado.")
+            }
+            navigate(navController)
+        }
+    }
+
+    fun accessoryDetailsOption() : Accessory? {
+        val accessoryIdIdValue = accessoryId.value
+        val accessoriesToDetails = accessories.value.find { it.id == accessoryIdIdValue }
+        _appUiState.update { currentState ->
+            currentState.copy(
+                title = R.string.accessory_details,
+                fabIcon = R.drawable.baseline_add_24,
+                iconContentDescription = R.string.accessory_details,
+                optionsEnable = true,
+                floatingActionButtonEnable = false,
+            )
+        }
+        return accessoriesToDetails
     }
 
     fun navigate(navController: NavController) {
@@ -282,16 +325,28 @@ class AppViewModel(
             }
             navController.navigate(AppScreens.GadgetList.name)
         } else if (_appUiState.value.title == R.string.gadget_details){
-            _appUiState.update { currentState ->
-                currentState.copy(
-                    title = R.string.insert_new_accessory,
-                    fabIcon = R.drawable.baseline_check_24,
-                    iconContentDescription = R.string.insert_new_accessory,
-                )
+            if (detailsGadgetScreen){
+                _appUiState.update { currentState ->
+                    currentState.copy(
+                        title = R.string.edit_gadget,
+                        fabIcon = R.drawable.baseline_check_24,
+                        iconContentDescription = R.string.edit_gadget,
+                    )
+                }
+                navController.navigate(AppScreens.GadgetEdition.name)
+                detailsGadgetScreen = false
+            }else{
+                _appUiState.update { currentState ->
+                    currentState.copy(
+                        title = R.string.insert_new_accessory,
+                        fabIcon = R.drawable.baseline_check_24,
+                        iconContentDescription = R.string.insert_new_accessory,
+                    )
+                }
+                navController.navigate(AppScreens.InsertAccessory.name)
             }
-            navController.navigate(AppScreens.InsertAccessory.name)
+
         }else if (_appUiState.value.title == R.string.insert_new_accessory){
-            Log.d("logdebug", "Entrou no metodo Navegate com parametro: ${_insertAccessoryUiState.value.gadgetId}")
             insertAccessory(
                 Accessory(
                     name = _insertAccessoryUiState.value.name,
@@ -310,11 +365,35 @@ class AppViewModel(
                 )
             }
             navController.navigate(AppScreens.GadgetDetails.name)
+        }else if (_appUiState.value.title == R.string.edit_gadget){
+            Log.d("logdebug", "Entrou no metodo navegadote update")
+            updateGadget(
+                Gadget(
+                    id = gadgetId.value,
+                    name = _insertGadgetUiState.value.name,
+                    brand = _insertGadgetUiState.value.brand,
+                    model = _insertGadgetUiState.value.model,
+                    purchaseDate = _insertGadgetUiState.value.purchaseDate,
+                    price = _insertGadgetUiState.value.price,
+                    specifications = _insertGadgetUiState.value.specifications,
+                    status = _insertGadgetUiState.value.status
+                )
+            )
+            Log.d("logdebug", "Saiu do metodo navegate update")
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.gadget_details,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.gadget_details,
+                )
+            }
+            navController.navigate(AppScreens.GadgetDetails.name)
         }
     }
 
     fun navigateBack(navController: NavController){
-        if (_appUiState.value.title == R.string.insert_new_accessory){
+        if (_appUiState.value.title == R.string.insert_new_accessory ||
+            _appUiState.value.title == R.string.edit_gadget){
             _appUiState.update { currentState ->
                 currentState.copy(
                     title = R.string.gadget_details,
@@ -323,6 +402,26 @@ class AppViewModel(
                 )
             }
             navController.popBackStack()
+        }else if (_appUiState.value.title == R.string.gadget_details){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.gadget_list,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.gadget_list,
+                    optionsEnable = false,
+                )
+            }
+            navController.navigate(AppScreens.GadgetList.name)
+        }else if (_appUiState.value.title == R.string.accessory_details){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.gadget_list,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.gadget_list,
+                    optionsEnable = true,
+                )
+            }
+            navController.navigate(AppScreens.GadgetList.name)
         }else{
         _appUiState.update {
             AppUiState()

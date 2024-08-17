@@ -3,7 +3,8 @@
     <string name="gadget_list">Gadget List</string>
     <string name="gadget_details">Gadget Details</string>
     <string name="insert_new_gadget">Insert new Gadget</string>
-    <string name="insert_new_accessory">Insert new Accessory</string>
-    <string name="confirm">Confirm</string>
     <string name="edit_gadget">Edit Gadget</string>
+    <string name="insert_new_accessory">Insert new Accessory</string>
+    <string name="accessory_details">Accessory Details</string>
+    <string name="confirm">Confirm</string>
 </resources>
