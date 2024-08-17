@@ -201,6 +201,9 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
                     accessory = accessory,
                 )
             }
+            composable(route = AppScreens.AccessoryEdition.name) {
+                AccessoryEdition(navController = navController, viewModel = viewModel)
+            }
         }
     }
 }
@@ -212,6 +215,7 @@ enum class AppScreens {
     InsertGadget,
     InsertAccessory,
     AccessoryDetails,
+    AccessoryEdition
 }
 
 @Composable
@@ -686,5 +690,108 @@ fun AccessoryDetails(
             Text(text = "Notes: ${accessory.notes}", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(10.dp))
         }
+    }
+}
+
+@Composable
+fun AccessoryEdition(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: AppViewModel,
+) {
+    BackHandler {
+        viewModel.navigateBack(navController)
+    }
+    val uiAccessoryState by viewModel.insertAccessoryScreenUiState.collectAsState()
+    // Para evitar terque apagar valor inicial
+    val priceAccessoryInput by viewModel.priceAccessoryInput.collectAsState()
+
+    // Variável que controla a exibição do DatePickerDialog
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    calendar.time = uiAccessoryState.purchaseDate
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            // Converte a data selecionada para um objeto Date
+            val selectedDate = Calendar.getInstance().apply {
+                set(selectedYear, selectedMonth, selectedDay)
+            }.time
+            // Chama a função para atualizar o estado
+            viewModel.onAccessoryPurchaseDateChange(selectedDate)
+        },
+        year, month, day
+    )
+    val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(uiAccessoryState.purchaseDate)
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+        TextField(
+            value = uiAccessoryState.name,
+            onValueChange = viewModel::onAccessoryName,
+            label = { Text(text = "Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiAccessoryState.type,
+            onValueChange = viewModel::onAccessoryType,
+            label = { Text(text = "Type") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Date Picker for Purchase Date (Simplified for now)
+        // Box para tornar o TextField clicável
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    datePickerDialog.show() // Mostra o DatePickerDialog quando o Box é clicado
+                }
+        ) {
+            TextField(
+                value = formattedDate, // Exibe a data formatada
+                onValueChange = { /* No-op */ }, // Não faz nada porque o DatePicker controla o valor
+                label = { Text(text = "Purchase Date") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false, // Impede edição direta do campo
+                readOnly = true // Evita que o usuário digite manualmente
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = priceAccessoryInput,
+            onValueChange = viewModel::onAccessoryPriceChange,
+            label = { Text(text = "Price") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = uiAccessoryState.notes,
+            onValueChange = viewModel::onAccessoryNotes,
+            label = { Text(text = "Notes") },
+            singleLine = false,
+            minLines = 1,
+            maxLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

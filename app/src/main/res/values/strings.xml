@@ -6,5 +6,6 @@
     <string name="edit_gadget">Edit Gadget</string>
     <string name="insert_new_accessory">Insert new Accessory</string>
     <string name="accessory_details">Accessory Details</string>
+    <string name="edit_accessory">Edit Accessory</string>
     <string name="confirm">Confirm</string>
 </resources>

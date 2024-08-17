@@ -38,6 +38,7 @@ class AppViewModel(
 ) : ViewModel() {
 
     private var detailsGadgetScreen: Boolean = false
+    private var detailsAccessoryScreen: Boolean = false
     private val _appUiState: MutableStateFlow<AppUiState> =
         MutableStateFlow(AppUiState())
     val appUiState: StateFlow<AppUiState> =
@@ -271,8 +272,29 @@ class AppViewModel(
             } else {
                 Log.e("logdebug", "EditOption: Gadget com ID $gadgetIdValue não encontrado.")
             }
-            navigate(navController)
+        } else if (_appUiState.value.title == R.string.accessory_details) {
+            val accessoryIdIdValue = accessoryId.value
+            val accessoriesToEdit = accessories.value.find { it.id == accessoryIdIdValue }
+            detailsAccessoryScreen = true
+            var newPriceEdit = accessoriesToEdit?.price
+            _priceAccessoryInput.value = newPriceEdit.toString()
+            if (accessoriesToEdit != null) {
+                _insertAccessoryUiState.update { currentState ->
+                    currentState.copy(
+                        name = accessoriesToEdit.name,
+                        type = accessoriesToEdit.type,
+                        gadgetId = accessoriesToEdit.gadgetId,
+                        purchaseDate = accessoriesToEdit.purchaseDate,
+                        price = accessoriesToEdit.price,
+                        notes = accessoriesToEdit.notes
+                    )
+                }
+            } else {
+                Log.e("logdebug", "EditOption: Gadget com ID $accessoryIdIdValue não encontrado.")
+            }
         }
+
+        navigate(navController)
     }
 
     fun accessoryDetailsOption() : Accessory? {
@@ -388,6 +410,20 @@ class AppViewModel(
                 )
             }
             navController.navigate(AppScreens.GadgetDetails.name)
+        }else if (_appUiState.value.title == R.string.accessory_details){
+            if (detailsAccessoryScreen){
+                _appUiState.update { currentState ->
+                    currentState.copy(
+                        title = R.string.edit_accessory,
+                        fabIcon = R.drawable.baseline_check_24,
+                        iconContentDescription = R.string.edit_accessory,
+                        optionsEnable = false,
+                        floatingActionButtonEnable = true,
+                    )
+                }
+                navController.navigate(AppScreens.AccessoryEdition.name)
+                detailsGadgetScreen = false
+            }
         }
     }
 
