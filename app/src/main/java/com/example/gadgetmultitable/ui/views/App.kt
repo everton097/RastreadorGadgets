@@ -1,11 +1,10 @@
 package com.example.gadgetmultitable.ui.views
 
 import android.app.DatePickerDialog
-import android.util.Log
-import android.widget.VideoView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +15,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,19 +48,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gadgetmultitable.R
 import com.example.gadgetmultitable.data.Accessory
 import com.example.gadgetmultitable.data.Gadget
 import com.example.gadgetmultitable.data.GadgetWithAccessory
 import com.example.gadgetmultitable.viewmodel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +76,74 @@ fun App(modifier: Modifier = Modifier, paddingValues: PaddingValues){
     Scaffold(
         topBar = {
             TopAppBar(title = {
-                Text(text = stringResource(id = appUiState.title))
+                Row {
+                    // Dropdown for Gadget Selection
+                    var expanded by remember { mutableStateOf(false) }
+                    Text(text = stringResource(id = appUiState.title))
+                    Spacer(modifier = modifier.weight(1f))
+                    if (appUiState.optionsEnable){
+                        Box(
+                            modifier = Modifier.wrapContentSize(Alignment.TopEnd)
+
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.baseline_more_vert_24),
+                                contentDescription = "options",
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .clickable {
+                                        expanded = true
+                                    }
+                            )
+                            Column(modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 4.dp)) {
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier
+                                        .wrapContentSize(Alignment.TopEnd)
+                                ) {
+                                    DropdownMenuItem(
+                                        onClick = {
+                                            expanded = false
+                                        },
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.baseline_edit_24),
+                                                    contentDescription = "Edit",
+                                                    modifier = Modifier
+                                                        .padding(end = 8.dp)
+                                                        .clickable {
+                                                            expanded = true
+                                                        }
+                                                )
+                                                Text(text = "Editar")
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        onClick = {
+                                            expanded = false
+                                        },
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.baseline_delete_outline_24),
+                                                    contentDescription = "Delete",
+                                                    modifier = Modifier
+                                                        .padding(end = 8.dp)
+                                                )
+                                                Text(text = "Delete")
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             })
         },
         floatingActionButton = {
@@ -167,7 +233,6 @@ fun GadgetList(
                         .fillMaxWidth()
                         .padding(3.dp)
                         .clickable {
-                            Log.d("logdebug", "${gadget}")
                             onGadgetSelection(gadget)
                             viewModel.navigate(navController)
                         }) {
@@ -178,7 +243,13 @@ fun GadgetList(
                                 .background(MaterialTheme.colorScheme.surfaceTint)
                         ) {
                             Column(modifier = modifier.padding(8.dp)) {
-                                Text(text = gadget.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, fontStyle = FontStyle.Normal)
+                                Text(
+                                    text = gadget.name,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    fontStyle = FontStyle.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
@@ -220,6 +291,7 @@ fun GadgetDetails(
             items(gadgetWithAccessories!!.accessories){ accessory ->
                 Card(modifier = modifier
                     .fillMaxWidth()
+                    .padding(vertical = 2.dp)
                     .clickable {
                         //onEditTask()
                     }) {

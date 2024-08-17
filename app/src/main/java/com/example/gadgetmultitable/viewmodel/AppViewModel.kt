@@ -18,6 +18,7 @@ import com.example.gadgetmultitable.ui.views.AppScreens
 import com.example.gadgetmultitable.ui.views.AppUiState
 import com.example.gadgetmultitable.ui.views.InsertAccessoryUiState
 import com.example.gadgetmultitable.ui.views.InsertGadgetUiState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -91,21 +92,6 @@ class AppViewModel(
             currentState.copy(status = newGadgetStatus)
         }
     }
-    fun createAccessory(){
-        viewModelScope.launch {
-            appDao.insertAccessory(
-                accessory = Accessory(
-                    id = 0,
-                    name = "",
-                    type = "",
-                    gadgetId = 1,
-                    purchaseDate = Date(),
-                    price = 200.0,
-                    notes = "Accessory teste manual"
-                )
-            )
-        }
-    }
 
     //Inserção de Accessory
     private var _insertAccessoryUiState: MutableStateFlow<InsertAccessoryUiState> = MutableStateFlow(
@@ -129,7 +115,7 @@ class AppViewModel(
         }
     }
     private val _priceAccessoryInput = MutableStateFlow("")
-    val priceAccessoryInput: StateFlow<String> = _priceInput
+    val priceAccessoryInput: StateFlow<String> = _priceAccessoryInput
     fun onAccessoryPriceChange(newAccessoryPrice: String) {
         _priceAccessoryInput.value = newAccessoryPrice
         _insertAccessoryUiState.update { currentState ->
@@ -160,6 +146,7 @@ class AppViewModel(
                 initialValue = listOf()
             )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val gadgetWithAccessory: StateFlow<GadgetWithAccessory?> =
         gadgetId.flatMapLatest { id ->
             Log.d("logdebug", "Buscando acessórios para o gadget com ID: $id")
@@ -176,18 +163,13 @@ class AppViewModel(
                     emit(
                         GadgetWithAccessory(
                             gadget = Gadget(
-                                id = 0,
-                                name = "",
-                                brand = "",
-                                model = "",
-                                purchaseDate = Date(),
-                                price = 0.0,
-                                specifications = "",
-                                status = ""
+                                id = 0, name = "", brand = "", model = "",
+                                purchaseDate = Date(),price = 0.0,
+                                specifications = "", status = ""
                             ),
                             accessories = emptyList()
                         )
-                    ) // Emitir null se ocorrer um erro
+                    )
                 }
         }
             .stateIn(
@@ -213,6 +195,7 @@ class AppViewModel(
     }
 
     fun insertAccessory(accessory: Accessory){
+        Log.d("logdebug", "Entrou no metodo DB de criação passando: ${accessory}")
         viewModelScope.launch {
             appDao.insertAccessory(accessory)
         }
@@ -232,9 +215,9 @@ class AppViewModel(
         detailsGadgetScreen= true
         Log.d("logdebug", "Entrou em selectGadgets")
         gadgetId.value = gadget.id
-        /*_insertAccessoryUiState.update { currentState ->
+        _insertAccessoryUiState.update { currentState ->
             currentState.copy(gadgetId = gadget.id)
-        }*/
+        }
     }
 
     fun selectAccessory(accessory: Accessory){
@@ -249,6 +232,7 @@ class AppViewModel(
                         title = R.string.gadget_details,
                         fabIcon = R.drawable.baseline_add_24,
                         iconContentDescription = R.string.gadget_details,
+                        optionsEnable = true
                     )
                 }
                 navController.navigate(AppScreens.GadgetDetails.name)
@@ -293,6 +277,7 @@ class AppViewModel(
             }
             navController.navigate(AppScreens.InsertAccessory.name)
         }else if (_appUiState.value.title == R.string.insert_new_accessory){
+            Log.d("logdebug", "Entrou no metodo Navegate com parametro: ${_insertAccessoryUiState.value.gadgetId}")
             insertAccessory(
                 Accessory(
                     name = _insertAccessoryUiState.value.name,
@@ -310,15 +295,26 @@ class AppViewModel(
                     iconContentDescription = R.string.insert_new_gadget,
                 )
             }
-            navController.navigate(AppScreens.GadgetList.name)
+            navController.navigate(AppScreens.GadgetDetails.name)
         }
     }
 
     fun navigateBack(navController: NavController){
+        if (_appUiState.value.title == R.string.insert_new_accessory){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.gadget_details,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.gadget_details,
+                )
+            }
+            navController.popBackStack()
+        }else{
         _appUiState.update {
             AppUiState()
         }
         navController.popBackStack()
+        }
     }
 
     companion object {
