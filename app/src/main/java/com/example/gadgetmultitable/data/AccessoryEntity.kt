@@ -24,7 +24,7 @@ data class Accessory(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val type: String,
-    val gadgetId: Int, // Chave estrangeira para GadgetEntity
+    val gadgetId: Int,
     val purchaseDate: Date,
     val price: Double,
     val notes: String

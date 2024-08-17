@@ -23,13 +23,9 @@ data class Gadget(
 data class GadgetWithAccessory(
     @Embedded val gadget: Gadget,
     @Relation(
-        parentColumn = "id",  // Refere-se à coluna "gadget_id" em Gadget
-        entityColumn = "gadgetId",   // Refere-se à coluna "gadgetId" em Accessory
-        associateBy = Junction(
-            Accessory::class,         // Junction deve ser com a entidade Accessory
-            parentColumn = "id", // Refere-se à coluna "gadget_id" em Gadget
-            entityColumn = "gadgetId"   // Refere-se à coluna "gadgetId" em Accessory
-        )
+        parentColumn = "id",
+        entityColumn = "gadgetId"
     )
     val accessories: List<Accessory>
 )
+

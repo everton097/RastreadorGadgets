@@ -237,14 +237,21 @@ class AppViewModel(
         if (_appUiState.value.title == R.string.gadget_details) {
             val gadgetIdValue = gadgetId.value
             val gadgetToDelete = gadgets.value.find { it.id == gadgetIdValue }
-
             if (gadgetToDelete != null) {
                 deleteGadget(gadgetToDelete)
             } else {
                 Log.e("logdebug", "DeleteOption: Gadget com ID $gadgetIdValue não encontrado.")
             }
-            navigateBack(navController)
+        } else if(_appUiState.value.title == R.string.accessory_details){
+            val accessoryIdValue = accessoryId.value
+            val accessoriesToDelete = accessories.value.find { it.id == accessoryIdValue }
+            if (accessoriesToDelete != null) {
+                deleteAccessory(accessoriesToDelete)
+            } else {
+                Log.e("logdebug", "DeleteOption: Accessory com ID $accessoryIdValue não encontrado.")
+            }
         }
+        navigateBack(navController)
     }
     fun EditOption(navController: NavController) {
         if (_appUiState.value.title == R.string.gadget_details) {
@@ -269,8 +276,8 @@ class AppViewModel(
                 Log.e("logdebug", "EditOption: Gadget com ID $gadgetIdValue não encontrado.")
             }
         } else if (_appUiState.value.title == R.string.accessory_details) {
-            val accessoryIdIdValue = accessoryId.value
-            val accessoriesToEdit = accessories.value.find { it.id == accessoryIdIdValue }
+            val accessoryIdValue = accessoryId.value
+            val accessoriesToEdit = accessories.value.find { it.id == accessoryIdValue }
             detailsAccessoryScreen = true
             var newPriceEdit = accessoriesToEdit?.price
             _priceAccessoryInput.value = newPriceEdit.toString()
@@ -286,7 +293,7 @@ class AppViewModel(
                     )
                 }
             } else {
-                Log.e("logdebug", "EditOption: Gadget com ID $accessoryIdIdValue não encontrado.")
+                Log.e("logdebug", "EditOption: Accessory com ID $accessoryIdValue não encontrado.")
             }
         }
 
@@ -469,6 +476,17 @@ class AppViewModel(
             }
             navController.navigate(AppScreens.GadgetList.name)
         }else if (_appUiState.value.title == R.string.edit_accessory){
+            _appUiState.update { currentState ->
+                currentState.copy(
+                    title = R.string.accessory_details,
+                    fabIcon = R.drawable.baseline_add_24,
+                    iconContentDescription = R.string.accessory_details,
+                    optionsEnable = true,
+                    floatingActionButtonEnable = false
+                )
+            }
+            navController.popBackStack()
+        }else if (_appUiState.value.title == R.string.edit_accessory ){
             _appUiState.update { currentState ->
                 currentState.copy(
                     title = R.string.accessory_details,
